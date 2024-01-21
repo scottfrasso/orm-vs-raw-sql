@@ -1,0 +1,64 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Company {
+  id    Int     @id @default(autoincrement())
+  name  String  @unique
+
+  companyUsers CompanyUser[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  deleted_at DateTime?
+}
+
+model CompanyUser {
+  id        Int      @id @default(autoincrement())
+  company   Company  @relation(fields: [company_id], references: [id])
+
+  company_id Int
+  user      User     @relation(fields: [user_id], references: [id])
+  
+  user_id    Int
+  role      String
+  @@unique([company_id, user_id])
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  deleted_at DateTime?
+}
+
+model User {
+  id    Int     @id @default(autoincrement())
+  name  String
+  email String  @unique
+
+  company_users CompanyUser[]
+  posts Posts[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  deleted_at DateTime?
+}
+
+model Posts {
+  id    Int     @id @default(autoincrement())
+  title String
+  body  String
+  published Boolean @default(false)
+  author User @relation(fields: [author_id], references: [id])
+  author_id Int
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  deleted_at DateTime?
+}

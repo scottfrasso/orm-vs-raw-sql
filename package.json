@@ -1,0 +1,21 @@
+{
+  "name": "orm-vs-raw-sql",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "generate": "prisma generate",
+    "migrate": "prisma migrate dev",
+    "seed": "ts-node ./prisma/seed.ts",
+    "with-prisma": "dotenv -e .env ts-node ./with-prisma/main.ts",
+    "raw": "dotenv -e .env ts-node ./raw-sql/main.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "5.8.1",
+    "pg": "8.11.3",
+    "prisma": "5.8.1"
+  },
+  "devDependencies": {
+    "@types/node": "20.11.5"
+  }
+}
