@@ -95,9 +95,7 @@ async function addAPost() {
 }
 
 async function runCTEQuery() {
-  console.log(
-    'Example of using a CTE to count the top poster per month that are not published',
-  )
+  console.log('Example of using a CTE to count the top poster per month')
   const query = `
     DO $$
     DECLARE
@@ -105,7 +103,7 @@ async function runCTEQuery() {
     BEGIN
         CREATE TEMP TABLE Months (month_id int, month_start timestamp);
 
-        FOR i IN 1..11 LOOP
+        FOR i IN 1..12 LOOP
             INSERT INTO Months (month_id, month_start) VALUES 
                 (i, 
                 make_date(EXTRACT(year FROM current_date)::int, i, 1));
@@ -115,9 +113,10 @@ async function runCTEQuery() {
     WITH RECURSIVE MonthlyPostCounts AS (
       SELECT
         m.month_id,
+        m.month_start,
         u.id AS user_id,
         COUNT(p.id) AS post_count,
-        RANK() OVER (PARTITION BY m.month_id ORDER BY COUNT(p.id) DESC) AS rank
+        DENSE_RANK() OVER (PARTITION BY m.month_id ORDER BY COUNT(p.id) DESC) AS rank
       FROM
         Months m
       LEFT JOIN
@@ -125,13 +124,13 @@ async function runCTEQuery() {
       LEFT JOIN
         "User" u ON p.author_id = u.id
       GROUP BY
-        m.month_id, u.id
+        m.month_id, m.month_start, u.id
     )
     SELECT
-      m.month_id,
+      m.month_start,
       mp.user_id,
       u.name AS user_name,
-      mp.post_count AS unpublished_post_count
+      mp.post_count AS post_count
     FROM
       Months m
     LEFT JOIN
