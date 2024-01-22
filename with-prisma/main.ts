@@ -22,25 +22,23 @@ async function createPostIfUserAndCompanyExist(
     })
 
     // If both user and company exist, create a new post
-    if (userExists && companyExists) {
-      return await transaction.posts.create({
-        data: {
-          title: postData.title,
-          body: postData.body,
-          published: false,
-          author_id: userId,
-        },
-      })
-    } else {
-      // If user or company doesn't exist, throw an error
+    if (!userExists || !companyExists) {
       throw new Error('User or Company does not exist')
     }
+
+    return await transaction.posts.create({
+      data: {
+        title: postData.title,
+        body: postData.body,
+        published: false,
+        author_id: userId,
+      },
+    })
   })
 }
 
 async function run() {
-  const user = await prisma.user.findUnique({
-    where: { email: 'john.doe@example.com' },
+  const user = await prisma.user.findFirst({
     include: {
       company_users: {
         include: {
@@ -49,6 +47,10 @@ async function run() {
       },
     },
   })
+
+  if (!user) {
+    throw new Error('User does not exist')
+  }
 
   const userId = user?.id
   const companyId = user?.company_users[0].id
