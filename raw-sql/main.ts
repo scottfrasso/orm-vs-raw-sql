@@ -15,37 +15,35 @@ async function createPostIfUserAndCompanyExist(
     // Start the transaction
     await client.query('BEGIN')
 
-    // Check if the user exists
-    const userResult = await client.query(
-      'SELECT * FROM "User" WHERE id = $1',
-      [userId],
-    )
-    const userExists = userResult.rowCount > 0
+    // Check that the user and company exist
+    // TODO: Code Example 2
+    const query = `
+      SELECT cu.user_id, cu.company_id
+      FROM "CompanyUser" AS cu
+      WHERE cu.user_id = $1 AND cu.company_id = $2;
+    `
 
-    // Check if the company exists
-    const companyResult = await client.query(
-      'SELECT * FROM "Company" WHERE id = $1',
-      [companyId],
-    )
-    const companyExists = companyResult.rowCount > 0
-
-    // If both user and company exist, create a new post
-    if (userExists && companyExists) {
-      const insertPostResult = await client.query(
-        'INSERT INTO "Posts" (title, body, published, author_id, updated_at) VALUES ($1, $2, $3, $4, NOW()) RETURNING *',
-        [postData.title, postData.body, false, userId],
-      )
-
-      // Commit the transaction
-      await client.query('COMMIT')
-
-      console.table(insertPostResult.rows)
-
-      return insertPostResult.rows[0]
-    } else {
-      // If user or company doesn't exist, throw an error
+    const result = await client.query(query, [userId, companyId])
+    if (
+      result.rows.length === 0 ||
+      result.rows[0].user_id == null ||
+      result.rows[0].company_id == null
+    ) {
       throw new Error('User or Company does not exist')
     }
+
+    const insertPostResult = await client.query(
+      `
+      INSERT INTO "Posts" (title, body, published, author_id, updated_at) 
+      VALUES ($1, $2, $3, $4, NOW()) RETURNING *
+      `,
+      [postData.title, postData.body, false, userId],
+    )
+
+    // Commit the transaction
+    await client.query('COMMIT')
+
+    return insertPostResult.rows[0]
   } catch (error) {
     // Rollback the transaction in case of error
     await client.query('ROLLBACK')
@@ -87,6 +85,7 @@ async function addAPost() {
     })
     if (post) {
       console.log('Post created successfully')
+      console.table([post])
     }
   } catch (error) {
     // Log any errors that occur
@@ -96,6 +95,10 @@ async function addAPost() {
 
 async function runCTEQuery() {
   console.log('Example of using a CTE to count the top poster per month')
+
+  // TODO: Code Example 3
+  // In a real-world application I'd generate the Months table on some kind of job schedule
+  // Here I'm just using a temporary table to keep the example simple
   const query = `
     DO $$
     DECLARE
@@ -110,7 +113,7 @@ async function runCTEQuery() {
         END LOOP;
     END $$;
 
-    WITH RECURSIVE MonthlyPostCounts AS (
+    WITH MonthlyPostCounts AS (
       SELECT
         m.month_id,
         m.month_start,
