@@ -35,3 +35,8 @@ lerna-debug.log*
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+
+# Environment files (keep .env.example templates)
+.env
+.env.*
+!.env.example
